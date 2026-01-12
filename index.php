@@ -52,8 +52,11 @@
             あなたの「気づき」が、<br>街の防犯カメラになる。
         </h1>
         <p style="color: #cbd5e1; font-size: 1.2em; max-width: 600px; margin-bottom: 40px;">
-            一人ひとりの報告をデータで繋ぎ、事故を未然に防ぐ。
-            「まちの目」は、テクノロジーで一歩先の安全をデザインします。
+        街に潜む危険は、警察にも防犯カメラにもすべては見えていません。<br>
+        ですが、毎日そこを歩く親たちの目には、はっきりと映っています。<br>
+        「まちの目」は、あなたの小さな違和感をデータとして繋ぎ、抑止力に変えるプラットフォームです。 <br>
+        ヒヤリハットを可視化し、行政と連携することで、事故が起きる前に街を書き換える。<br>
+        テクノロジーで、あの子の通学路を世界で一番安全な場所にします。
         </p>
         <div style="display: flex; gap: 15px;">
             <button type="button" onclick="document.getElementById('reportForm').scrollIntoView({behavior: 'smooth'})" class="btn-primary" style="padding: 15px 30px !important;">レポートを作成する</button>
