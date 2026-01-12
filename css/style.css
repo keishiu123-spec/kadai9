@@ -1,0 +1,99 @@
+/* --- 共通設定 --- */
+body {
+    background-color: #f8fafc !important; /* 薄いグレーの背景 */
+    color: #1e293b !important; /* 視認性の高い濃紺の文字 */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* --- ナビゲーションバー --- */
+.navbar {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    margin-bottom: 0;
+}
+
+.navbar-brand {
+    color: #2563eb !important; /* ブランドカラーの青 */
+    font-weight: 700 !important;
+    letter-spacing: -0.025em;
+}
+
+/* --- 地図エリア --- */
+#myMap {
+    width: 95% !important;
+    height: 350px !important;
+    margin: 20px auto !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* --- コンテナ・カード形式 --- */
+.container, .jumbotron, .report-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    padding: 24px !important;
+    margin-top: 20px !important;
+    margin-bottom: 20px !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 一覧用のコンパクトカード */
+.report-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+    transition: transform 0.2s ease;
+}
+
+.report-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* --- フォーム要素 --- */
+label {
+    font-weight: 600;
+    color: #475569;
+    margin-top: 10px;
+}
+
+input[type="text"], 
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background-color: #fcfcfc;
+}
+
+/* --- ボタンデザイン --- */
+.btn-primary, 
+input[type="submit"], 
+input[type="button"],
+button[type="button"] {
+    background-color: #2563eb !important; /* 鮮やかな青 */
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 12px 24px !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: #1d4ed8 !important;
+}
+
+.btn-danger {
+    background-color: #ef4444 !important; /* 警告の赤 */
+    border-radius: 8px !important;
+}
