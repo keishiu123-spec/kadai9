@@ -1,5 +1,9 @@
 <?php
+session_start();
+session_start();
 include("funcs.php");
+sschk();
+
 $pdo = db_conn();
 
 // 1. データの取得（最新のレポート順）
@@ -123,6 +127,18 @@ $json = json_encode($values, JSON_UNESCAPED_UNICODE);
             font-size: 0.85rem;
             font-weight: 600;
         }
+    
+        /* 全体フェードインアニメーション */
+        body {
+            animation: fadeIn 0.8s ease-out forwards;
+            opacity: 0; /* 初期状態は透明 */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
     </style>
 </head>
 <body>
@@ -135,6 +151,9 @@ $json = json_encode($values, JSON_UNESCAPED_UNICODE);
     </nav>
 </header>
 
+
+
+
 <div class="container-main">
     <div class="map-header">
         <div class="map-title">「まちの目」安全状況ダッシュボード</div>
@@ -145,8 +164,15 @@ $json = json_encode($values, JSON_UNESCAPED_UNICODE);
 
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
         <h2 style="font-weight:800; color:#fff; margin:0;">最新の安全レポート</h2>
-        <a href="index.php" class="btn-primary" style="text-decoration:none; padding: 12px 24px !important; font-size: 0.9rem;">新規レポートを作成</a>
     </div>
+
+    <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+    <a href="csv_download.php" class="btn" style="background-color: #10b981; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 0.9rem;">CSVダウンロード</a>
+    <a href="summary_report.php" class="btn" style="background-color: #8b5cf6; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        ✨ AI一括レポート分析</a>
+    <a href="index.php" class="btn" style="background-color: #2563eb; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 0.9rem;">新規レポートを作成</a>
+</div>
+
     
     <div class="report-list">
         <?php foreach($values as $v){ ?>
@@ -161,37 +187,68 @@ $json = json_encode($values, JSON_UNESCAPED_UNICODE);
                     <div style="color:#334155; line-height:1.6;"><?= nl2br(h($v['description'])) ?></div>
                 </div>
                 <div style="margin-left:30px; display:flex; gap:12px;">
-                    <a href="detail.php?id=<?= h($v['id']) ?>" class="btn-primary" style="background:#f1f5f9 !important; color:#0f172a !important; border:1px solid #cbd5e1 !important; padding:10px 20px !important; font-size:0.9rem; text-decoration:none; font-weight:700;">編集</a>
-                    <a href="delete.php?id=<?= h($v['id']) ?>" class="btn-danger" style="padding:10px 20px !important; font-size:0.9rem; text-decoration:none; font-weight:700;" onclick="return confirm('レポートを削除しますか？')">削除</a>
+                    <a href="detail.php?id=<?= h($v['id']) ?>" class="btn-primary" style="text-decoration:none; padding: 10px 20px !important; font-size: 0.85rem; border-radius: 8px;">編集</a>
+                    <a href="delete.php?id=<?= h($v['id']) ?>" class="btn-danger" style="text-decoration:none; padding: 10px 20px !important; font-size: 0.85rem; border-radius: 8px;" onclick="return confirm('本当に削除しますか？')">削除</a>
                 </div>
             </div>
         <?php } ?>
     </div>
 </div>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=<?= get_google_api_key() ?>&libraries=places"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=<?= get_google_api_key() ?>&libraries=places,visualization"></script>
 <script>
     const data = JSON.parse('<?= $json ?>');
 
     function initMap() {
-        const defaultPos = {lat: 35.681236, lng: 139.767125};
-        const centerPos = data.length > 0 ? {lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lng)} : defaultPos;
+    const defaultPos = {lat: 35.681236, lng: 139.767125};
+    const centerPos = data.length > 0 ? {lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lng)} : defaultPos;
 
-        const map = new google.maps.Map(document.getElementById('myMap'), {
-            zoom: 15,
-            center: centerPos,
-        });
+    // 1. 地図の基本設定
+    const map = new google.maps.Map(document.getElementById('myMap'), {
+        zoom: 15,
+        center: centerPos,
+        mapTypeId: 'roadmap'
+    });
 
-        data.forEach(v => {
-            if(v.lat && v.lng){
-                new google.maps.Marker({
-                    position: {lat: parseFloat(v.lat), lng: parseFloat(v.lng)},
-                    map: map,
-                    title: v.location,
-                    animation: google.maps.Animation.DROP
-                });
-            }
-        });
+    // 2. ヒートマップ用のデータ作成（緯度・経度の配列）
+    const heatData = data.map(v => {
+        return new google.maps.LatLng(parseFloat(v.lat), parseFloat(v.lng));
+    });
+
+    // 3. ヒートマップレイヤーを地図に重ねる
+    const heatmap = new google.maps.visualization.HeatmapLayer({
+        data: heatData,
+        map: map,
+        radius: 50,    // 密度の広がり具合（UXに合わせて調整）
+        opacity: 0.8   // 透明度
+    });
+
+    // 4. 【UX向上】クリックして詳細も見れるようにピンも小さく表示
+    data.forEach(v => {
+        if(v.lat && v.lng){
+            const marker = new google.maps.Marker({
+                position: {lat: parseFloat(v.lat), lng: parseFloat(v.lng)},
+                map: map,
+                // 小さな円形のアイコンにしてヒートマップを邪魔しないようにする
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 4,
+                    fillColor: '#2563eb',
+                    fillOpacity: 0.7,
+                    strokeWeight: 1,
+                    strokeColor: 'white'
+                }
+            });
+
+            const infoWindow = new google.maps.InfoWindow({
+                content: `<div style="color:#333;"><strong>📍 ${v.location}</strong><br>${v.description}</div>`
+            });
+
+            marker.addListener('click', () => {
+                infoWindow.open(map, marker);
+            });
+        }
+    });
     }
     window.onload = initMap;
 </script>
