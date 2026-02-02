@@ -1,6 +1,5 @@
 <?php
 session_start();
-session_start();
 include("funcs.php");
 sschk();
 
@@ -25,121 +24,96 @@ $json = json_encode($values, JSON_UNESCAPED_UNICODE);
     <meta charset="utf-8">
     <title>まちの目 | 危険箇所マッピング</title>
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        /* index.php と共通の背景グラデーション */
-        body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #2563eb 100%) !important;
-            background-attachment: fixed;
-            color: white !important;
-            margin: 0;
-            font-family: 'Inter', -apple-system, sans-serif;
-        }
+<style>
+    /* --- 全体：背景設定 --- */
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #2563eb 100%) !important;
+        background-attachment: fixed;
+        color: white !important;
+        margin: 0;
+        font-family: 'Inter', -apple-system, sans-serif;
+        animation: fadeIn 0.8s ease-out forwards;
+        opacity: 0;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ヘッダーのスリム化と背景への統合 */
-        header {
-            width: 100%;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(8px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-        .navbar {
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            margin-bottom: 0 !important;
-            min-height: auto !important;
-            padding: 12px 0 !important;
-        }
-        .navbar-brand {
-            color: #fff !important;
-            font-weight: 800;
-            font-size: 1.2rem !important;
-            letter-spacing: 0.1em;
-            text-decoration: none;
-        }
+    /* --- ヘッダー：完全な黒透過 --- */
+    header {
+        width: 100% !important;
+        background: rgba(0, 0, 0, 0.95) !important;
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 9999;
+    }
+    .navbar {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 10px 0 !important;
+    }
+    .navbar-brand { color: #fff !important; font-weight: 800; font-size: 1.1rem; text-decoration: none; }
 
-        .container-main {
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+    /* --- マップ：青い背景（余白）を消す --- */
+    #myMap { 
+        width: 100% !important;
+        height: 450px !important; 
+        border-radius: 20px;
+        margin-bottom: 25px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background-color: #000 !important;
+        padding: 0 !important;
+    }
+    #myMap img { max-width: none !important; }
 
-        /* マップセクション */
-        .map-header {
-            margin: 20px 0;
-        }
-        .map-title {
-            font-size: 1.6rem;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .map-title::before {
-            content: "";
-            width: 5px;
-            height: 24px;
-            background: #2563eb;
-            display: inline-block;
-            border-radius: 3px;
-        }
+    /* --- レポートリスト：超コンパクト・スクロール --- */
+    .report-list {
+        max-height: 350px !important; /* 縦幅を固定 */
+        overflow-y: auto;
+        background: rgba(15, 23, 42, 0.4);
+        border-radius: 12px;
+        padding: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
-        #myMap { 
-            width: 100%; 
-            height: 700px; /* 下に大きく広げる */
-            border-radius: 20px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            margin-bottom: 50px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
+    .report-card-modern {
+        background: rgba(255, 255, 255, 0.95) !important;
+        padding: 6px 15px !important;
+        margin-bottom: 4px !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 40px !important; /* ボタンがあるため少し高さを確保 */
+        border-radius: 8px !important;
+        color: #0f172a !important;
+    }
 
-        /* レポートカード（視認性重視） */
-        .report-card-modern {
-            background: rgba(255, 255, 255, 0.98) !important;
-            border-radius: 16px !important;
-            padding: 24px !important;
-            margin-bottom: 20px !important;
-            display: flex;
-            align-items: center;
-            color: #0f172a !important;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease;
-        }
-        .report-card-modern:hover {
-            transform: translateY(-3px);
-        }
+    .report-info-main {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        overflow: hidden;
+        font-size: 0.8rem !important;
+    }
 
-        .tag-status {
-            background: #2563eb;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            display: inline-block;
-        }
-        .info-date {
-            margin-left: 15px;
-            color: #64748b;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-    
-        /* 全体フェードインアニメーション */
-        body {
-            animation: fadeIn 0.8s ease-out forwards;
-            opacity: 0; /* 初期状態は透明 */
-        }
+    .location-text { font-weight: 800; min-width: 140px; white-space: nowrap; }
+    .description-text { color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+    .tag-status { background: #2563eb; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; }
+    .info-date { color: #64748b; font-size: 0.7rem; white-space: nowrap; margin-left: 10px; }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+    /* 管理用ボタンのスリム化 */
+    .btn-admin-small {
+        padding: 4px 10px !important;
+        font-size: 0.7rem !important;
+        border-radius: 4px !important;
+        text-decoration: none !important;
+        font-weight: bold;
+    }
+</style>
 
-    </style>
+
 </head>
 <body>
 
@@ -174,25 +148,24 @@ $json = json_encode($values, JSON_UNESCAPED_UNICODE);
 </div>
 
     
-    <div class="report-list">
-        <?php foreach($values as $v){ ?>
-            <div class="report-card-modern">
-                <div style="flex:1;">
-                    <div style="margin-bottom:12px;">
-                        <span class="tag-status">警戒資産</span>
-                        <span class="info-date"><?= h($v['indate']) ?> 報告</span>
-                        <span style="margin-left:15px; color:#475569; font-weight:700;">車両番号: <?= h($v['car_number']) ?></span>
-                    </div>
-                    <div style="font-size: 1.3rem; font-weight: 800; color:#0f172a; margin-bottom:8px;">📍 <?= h($v['location']) ?></div>
-                    <div style="color:#334155; line-height:1.6;"><?= nl2br(h($v['description'])) ?></div>
-                </div>
-                <div style="margin-left:30px; display:flex; gap:12px;">
-                    <a href="detail.php?id=<?= h($v['id']) ?>" class="btn-primary" style="text-decoration:none; padding: 10px 20px !important; font-size: 0.85rem; border-radius: 8px;">編集</a>
-                    <a href="delete.php?id=<?= h($v['id']) ?>" class="btn-danger" style="text-decoration:none; padding: 10px 20px !important; font-size: 0.85rem; border-radius: 8px;" onclick="return confirm('本当に削除しますか？')">削除</a>
-                </div>
+<div class="report-list">
+    <?php foreach($values as $v){ ?>
+        <div class="report-card-modern">
+            <div class="report-info-main">
+                <span class="tag-status">警戒資産</span>
+                <div class="location-text">📍 <?= h($v['location']) ?></div>
+                <div class="description-text"><?= h($v['description']) ?></div>
+                <span class="info-date"><?= h(date('m/d H:i', strtotime($v['indate']))) ?></span>
             </div>
-        <?php } ?>
-    </div>
+            
+            <div style="display: flex; gap: 6px; margin-left: 15px;">
+                <a href="detail.php?id=<?= h($v['id']) ?>" class="btn-primary btn-admin-small">編集</a>
+                <a href="delete.php?id=<?= h($v['id']) ?>" class="btn-danger btn-admin-small" 
+                   style="background-color: #ef4444;" onclick="return confirm('本当に削除しますか？')">削除</a>
+            </div>
+        </div>
+    <?php } ?>
+</div>
 </div>
 
 <script src="https://maps.googleapis.com/maps/api/js?key=<?= get_google_api_key() ?>&libraries=places,visualization"></script>

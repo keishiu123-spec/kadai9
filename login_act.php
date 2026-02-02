@@ -1,4 +1,5 @@
 <?php
+
 session_start(); // セッション開始 [cite: 28, 85]
 $lid = $_POST["lid"];
 $lpw = $_POST["lpw"];
@@ -20,7 +21,7 @@ $val = $stmt->fetch();
 
 // 2. 該当ユーザーがいるか確認（パスワード照合）
 // ※本来は password_verify を推奨しますが、まずは直接一致でテスト
-if($val != "" && $val["lpw"] == $lpw){
+if( password_verify($_POST["lpw"] ,$val["lpw"])){
     $_SESSION["chk_ssid"] = session_id(); // 認証OKの証 [cite: 209, 215]
     $_SESSION["kanri_flg"] = $val["kanri_flg"];
     $_SESSION["name"] = $val["name"];

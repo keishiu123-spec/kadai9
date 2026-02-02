@@ -1,6 +1,7 @@
 <?php
+session_start();
 require_once('funcs.php');
-require_once('tcpdf/tcpdf.php');
+sschk(); // 管理者権限チェック
 
 // 1. 全通報データをDBから取得
 $pdo = db_conn();
@@ -11,21 +12,15 @@ $report_list = "";
 if ($status == false) {
     sql_error($stmt);
 } else {
-    while ($res = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        // AIが認識しやすいように整形
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($rows as $res) {
         $report_list .= "【発生日】" . $res["indate"] . " 【場所】" . $res["location"] . " 【内容】" . $res["description"] . "\n";
     }
 }
 
 // 2. ChatGPT APIで分析を実行
-$api_key = get_chatgpt_api_key();
-$prompt = "以下の交通通報データを分析し、地域安全レポートを作成してください。
-【指示】
-1. 頻発している違反の種類をまとめてください。
-2. 危険が集中している場所（例：砧公園前など）を特定してください。
-3. 住民ができる対策を3つ提案してください。
-
-データ：\n" . $report_list;
+$api_key = get_chatgpt_api_key(); // funcs.phpから読み込み
+$prompt = "以下の交通通報データを分析し、地域安全レポートを作成してください。\n【指示】\n1. 頻発している違反の種類をまとめてください。\n2. 危険が集中している場所を特定してください。\n3. 住民ができる対策を3つ提案してください。\n\nデータ：\n" . $report_list;
 
 $ch = curl_init("https://api.openai.com/v1/chat/completions");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -35,9 +30,9 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
     "Authorization: Bearer $api_key"
 ]);
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-    "model" => "gpt-3.5-turbo", 
+    "model" => "gpt-4o-mini", // 速度と精度のバランスが良い最新モデル
     "messages" => [
-        ["role" => "system", "content" => "あなたは地域の安全担当者です。データに基づき簡潔に回答してください。"],
+        ["role" => "system", "content" => "あなたは地域の安全担当者です。データに基づき、箇条書きを活用してプロフェッショナルかつ簡潔に回答してください。"],
         ["role" => "user", "content" => $prompt]
     ],
     "temperature" => 0.7
@@ -45,40 +40,77 @@ curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
 
 $response = curl_exec($ch);
 $result = json_decode($response, true);
+curl_close($ch);
 
-// 回答の取得とエラーチェック
+// 回答の取得
 if (isset($result['choices'][0]['message']['content'])) {
     $ai_analysis = $result['choices'][0]['message']['content'];
 } else {
-    // エラーメッセージを具体的に表示
-    $error_msg = isset($result['error']['message']) ? $result['error']['message'] : '不明なエラーが発生しました。APIキーや残高を確認してください。';
-    $ai_analysis = "【分析エラー】\n" . $error_msg;
+    $error_msg = isset($result['error']['message']) ? $result['error']['message'] : 'APIエラーが発生しました。';
+    $ai_analysis = "分析に失敗しました。理由: " . $error_msg;
 }
-curl_close($ch);
+?>
 
-// 3. PDFの生成
-$pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8');
-$pdf->setPrintHeader(false);
-$pdf->setPrintFooter(false);
-$pdf->AddPage();
-// 日本語フォントの設定（kozminproregularを使用）
-$pdf->SetFont('kozminproregular', '', 11);
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>AI安全分析レポート | まちの目</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #2563eb 100%) !important;
+            background-attachment: fixed;
+            color: white !important;
+            font-family: 'Inter', sans-serif;
+            margin: 0; padding: 40px 20px;
+            display: flex; justify-content: center;
+        }
+        .analysis-container {
+            max-width: 800px; width: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            color: #0f172a; border-radius: 24px;
+            padding: 40px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .report-header {
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 15px; margin-bottom: 25px;
+        }
+        .analysis-content {
+            line-height: 1.8; font-size: 1.05rem;
+        }
+        .btn-group {
+            margin-top: 35px; display: flex; gap: 15px; align-items: center;
+        }
+        .btn-pdf {
+            background: #2563eb; color: white; padding: 12px 25px;
+            border-radius: 10px; text-decoration: none; font-weight: bold;
+            border: none; cursor: pointer; transition: 0.3s;
+        }
+        .btn-pdf:hover { background: #1d4ed8; transform: translateY(-2px); }
+        .back-link { color: #64748b; text-decoration: none; font-size: 0.9rem; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
 
-// レポートのHTML構造
-$html = '
-    <h1 style="text-align:center; color:#2563eb; border-bottom: 2px solid #2563eb; padding-bottom:10px;">地域安全分析レポート（AI生成）</h1>
-    <p style="text-align:right;">作成日: ' . date('Y-m-d H:i') . '</p>
-    
-    <h3 style="background-color:#eff6ff; padding:5px;">■ AIによる分析結果と対策提言</h3>
-    <div style="padding:10px; border:1px solid #e2e8f0; line-height:1.6;">
-        ' . nl2br(htmlspecialchars($ai_analysis)) . '
+<div class="analysis-container">
+    <div class="report-header">
+        <h1 style="margin:0; color:#1e293b; font-size:1.8rem;">✨ 地域安全分析レポート</h1>
+        <p style="color:#64748b; margin:5px 0 0;">AI Agent By "Machinome" - <?= date('Y-m-d H:i') ?></p>
     </div>
-    
-    <h3 style="background-color:#f1f5f9; padding:5px; margin-top:20px;">■ 解析の根拠となった通報データ（全件）</h3>
-    <div style="font-size:9pt; color:#475569;">
-        ' . nl2br(htmlspecialchars($report_list)) . '
-    </div>
-';
 
-$pdf->writeHTML($html, true, false, true, false, '');
-$pdf->Output('Safety_Report_AI.pdf', 'D');
+    <div class="analysis-content">
+        <?= nl2br(h($ai_analysis)) ?>
+    </div>
+
+    <div class="btn-group">
+        <form action="export_pdf.php" method="POST" style="margin:0;">
+            <input type="hidden" name="analysis_data" value="<?= h($ai_analysis) ?>">
+            <button type="submit" class="btn-pdf">📄 PDFとして保存する</button>
+        </form>
+        <a href="select.php" class="back-link">管理画面に戻る</a>
+    </div>
+</div>
+
+</body>
+</html>

@@ -100,6 +100,36 @@
 
     body { animation: fadeIn 0.8s ease-out forwards; opacity: 0; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+
+    /* スマホ画面（横幅768px以下）用の調整 */
+@media screen and (max-width: 768px) {
+    /* 1. 全体：左右の不要なマージンをリセットして中央寄せを徹底 */
+    .hero-section .container {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        width: 100% !important;
+        padding: 0 15px !important;
+    }
+
+    /* 2. ガラスカード：スマホの横幅に合わせて中央配置 */
+    .glass-card {
+        margin-left: auto !important;  /* 強制的に中央へ */
+        margin-right: auto !important; /* 強制的に中央へ */
+        padding: 25px 20px !important;
+        width: 90% !important;         /* 画面端に密着しないよう90%程度に設定 */
+        max-width: none !important;
+        box-sizing: border-box;        /* パディングによるはみ出しを防止 */
+    }
+
+    /* 3. タイトル等の文字サイズ調整 */
+    .hero-section h1 {
+        font-size: 2.0rem !important; 
+        line-height: 1.2 !important;
+    }
+}
+
+
 </style>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -118,12 +148,13 @@
 
 
 <header>
-  <nav class="navbar navbar-default" style="border:none;">
-    <div class="container">
-      <div class="navbar-header"><a class="navbar-brand" href="select.php">まちの目</a></div>
-    </div>
-  </nav>
+    <nav class="navbar" style="display: flex; justify-content: flex-end; align-items: center; padding: 15px 30px; gap: 25px;">
+        <a class="nav-link-custom" href="view.php">📊 履歴を見る</a>
+        <a class="nav-link-custom" href="login.php">🔑 管理者画面</a>
+        <a class="nav-link-custom" href="risk_check.php">🚦 道路リスク診断</a>
+    </nav>
 </header>
+
 
 <div class="hero-section">
     <div class="container" style="background:transparent !important; border:none !important; box-shadow:none !important;">
@@ -138,91 +169,130 @@
         ヒヤリハットを可視化し、行政と連携することで、事故が起きる前に街を書き換える。<br>
         テクノロジーで、あの子の通学路を世界で一番安全な場所にします。
         </p>
-        <div style="display: flex; gap: 15px;">
-            <button type="button" onclick="document.getElementById('reportForm').scrollIntoView({behavior: 'smooth'})" class="btn-primary" style="padding: 15px 30px !important;">レポートを作成する</button>
-            <a href="select.php" class="btn-primary" style="background:#0f172a !important; border:1px solid #334155 !important; text-decoration:none; padding: 15px 30px !important;">履歴を閲覧</a>
-        </div>
+
     </div>
 </div>
 
-<div class="container glass-card" id="reportFormContainer" style="position:relative; z-index:10;">
+<div class="glass-card" style="max-width: 500px; margin: 0 auto; backdrop-filter: blur(15px); background: rgba(255,255,255,0.05) !important;">
   <form method="POST" action="insert.php" id="reportForm" enctype="multipart/form-data">
-    <fieldset style="border:none;">
-      <div style="border-left: 4px solid #2563eb; padding-left: 15px; margin-bottom: 30px;">
-          <h3 style="margin:0; font-weight: 800; color: #0f172a;">新規通報フォーム</h3>
-          <p style="color: #64748b; margin:0;">周囲の安全のため、正確な情報入力にご協力ください。</p>
-      </div>
-      
-    <div class="form-group" style="margin-bottom: 25px;">
-        <label style="color:#1e293b; font-size:0.95em; font-weight:700;">発生場所（住所）</label>
-        <div style="display:flex; gap:10px;">
-            <input type="text" name="location" id="location" placeholder="住所を入力、またはGPSボタンで現在地を取得してください" style="flex:1;">
-            <button type="button" onclick="getCurrentLocation()" style="background:#0f172a !important;">📍 GPS取得</button>
+    
+    <div class="form-group">
+        <button type="button" onclick="getCurrentLocation()" class="btn-primary" style="margin-bottom:15px;">
+            📍 今この場所を取得する
+        </button>
+        
+        <label style="color:white; font-size:0.8rem; display:block; margin-bottom:5px; text-align:left;">場所・住所（修正・手入力可）</label>
+        <input type="text" name="location" id="location" placeholder="住所を入力、またはGPS取得" style="width:100%;">
+    </div>
+
+    <div style="margin: 20px 0;">
+        <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:10px;">状況を選択</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <?php $tags = ['一時不停止','危険運転','信号無視','スピード過剰']; 
+            foreach($tags as $tag): ?>
+                <button type="button" class="btn-tag" onclick="addTag('<?= $tag ?>')"><?= $tag ?></button>
+            <?php endforeach; ?>
         </div>
     </div>
 
-        <div class="form-group" style="margin-top: 20px;">
-            <label style="color:#1e293b; font-size:0.95em; font-weight:700;">現場の写真（任意）</label>
-            <input type="file" name="img" accept="image/*" capture="environment" style="background:white; width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
-        </div>
+    <textarea name="description" placeholder="詳細メモ（任意）" style="width:100%; height:80px; background:rgba(255,255,255,0.1) !important; color:white !important; border:1px solid #334155;"></textarea>
+    
+    <label class="btn-secondary" style="display:block; text-align:center; margin-top:15px; cursor:pointer;">
+        📷 写真を添える
+        <input type="file" name="img" accept="image/*" style="display:none;">
+    </label>
 
-    <div class="form-group" style="margin-top: 20px;">
-        <label style="color:#1e293b; font-size:0.95em; font-weight:700;">状況のクイック選択</label>
-        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
-            <button type="button" class="btn-tag" onclick="addTag('一時不停止')">一時不停止</button>
-            <button type="button" class="btn-tag" onclick="addTag('危険運転')">危険運転</button>
-            <button type="button" class="btn-tag" onclick="addTag('スピード出し過ぎ')">スピード過剰</button>
-            <button type="button" class="btn-tag" onclick="addTag('横断妨害')">横断妨害</button>
-            <button type="button" class="btn-tag" onclick="addTag('信号無視')">信号無視</button>
-        </div>
-    </div>
+    <button type="button" onclick="getCoordsAndSubmit()" class="btn-primary" style="width:100%; margin-top:20px; background:linear-gradient(to right, #60a5fa, #2563eb);">
+        送信を完了する
+    </button>
+    
+    <input type="hidden" name="lat" id="lat"><input type="hidden" name="lng" id="lng">
+  </form>
+</div>
 
 <style>
-    /* クイック選択ボタンの専用デザイン */
-    .btn-tag {
-        background: #f1f5f9;
-        color: #475569;
-        border: 1px solid #cbd5e1;
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .btn-tag:active {
-        background: #2563eb;
-        color: white;
-        transform: scale(0.95);
-    }
+  /* 既存のスタイルをこれに置き換え */
+.hero-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* 中央に寄せる */
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    text-align: center;
+}
+
+.glass-card {
+    background: rgba(15, 23, 42, 0.7) !important; /* 少し暗くして文字を読みやすく */
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 40px !important;
+    border-radius: 24px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    width: 100%;
+    max-width: 480px; /* 横幅を絞ってスマートに */
+    margin-top: 40px;
+}
+
+/* 下にあった古いフォームを強制非表示にする */
+#reportFormContainer, .container.glass-card:not(:first-of-type) {
+    display: none !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 16px 24px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.05em !important;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4) !important;
+}
+
+/* 状況選択（タグ）ボタンをアプリ風に */
+.btn-tag {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    padding: 10px 20px !important;
+    border-radius: 50px !important; /* 丸みを持たせる */
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-tag:active {
+    background: #3b82f6 !important;
+    transform: scale(0.95);
+}
+
+.nav-link-custom {
+    color: #ffffff !important;         /* 強制的に白文字にする */
+    font-weight: 700 !important;      /* 太字にする */
+    font-size: 1.0rem !important;     /* 視認性を上げるため少し大きく */
+    text-decoration: none !important; /* 下線を消す */
+    letter-spacing: 0.05em;           /* 文字の間隔を広げて高級感を出す */
+    transition: 0.3s;
+    opacity: 0.9;                     /* 背景に馴染むよう少しだけ透かす */
+}
+
+.nav-link-custom:hover {
+    color: #60a5fa !important;         /* ホバー時だけ青く光らせる */
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
 </style>
 
 
-      
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-          <div class="form-group">
-            <label style="color:#1e293b; font-size:0.95em; font-weight:700;">車両番号（不明な場合は空欄）</label>
-            <input type="text" name="car_number" placeholder="例：品川500 あ 1234">
-        </div>
-        <div class="form-group">
-            <label style="color:#1e293b; font-size:0.95em; font-weight:700;">通報日時</label>
-            <input type="text" name="indate" value="<?= date('Y-m-d H:i') ?>" style="background:#fff; cursor:text;">
-        </div>
-      </div>
 
-      
-      <div class="form-group" style="margin-top: 20px;">
-          <label style="color:#1e293b; font-size:0.95em; font-weight:700;">状況の詳細</label>
-          <textarea name="description" rows="5" placeholder="どのような危険や不審な点を感じたか、具体的に入力してください（例：何度も同じ場所を徘徊している、蛇行運転をしている等）"></textarea>
-      </div>
-      
-      <input type="hidden" name="lat" id="lat">
-      <input type="hidden" name="lng" id="lng">
-      
-      <input type="button" value="この内容で地域の安全を守る（送信）" onclick="getCoordsAndSubmit()" style="width:100%; padding:20px !important; font-size:1.1em; font-weight:800; letter-spacing:0.05em; background: linear-gradient(to right, #2563eb, #1d4ed8) !important; border-radius:12px !important;">
-    </fieldset>
-  </form>
-</div>
 
 <script>
 function getCoordsAndSubmit() {
@@ -239,11 +309,36 @@ function getCoordsAndSubmit() {
 }
 function getCurrentLocation() {
     if (!navigator.geolocation) { alert("位置情報に対応していません"); return; }
+    
+    const locInput = document.getElementById('location');
+    locInput.value = "取得中..."; // ユーザーへのフィードバック
+
     navigator.geolocation.getCurrentPosition((position) => {
-        document.getElementById('lat').value = position.coords.latitude;
-        document.getElementById('lng').value = position.coords.longitude;
-        document.getElementById('location').value = "GPSによる現在地取得完了";
-        alert("座標を取得しました。");
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        // 1. 座標を隠しフィールドにセット
+        document.getElementById('lat').value = lat;
+        document.getElementById('lng').value = lng;
+
+        // 2. 逆ジオコーディング（座標 → 住所文字列）
+        const geocoder = new google.maps.Geocoder();
+        const latlng = { lat: parseFloat(lat), lng: parseFloat(lng) };
+
+        geocoder.geocode({ location: latlng }, (results, status) => {
+            if (status === "OK") {
+                if (results[0]) {
+                    locInput.value = results[0].formatted_address; // 住所を欄に表示
+                } else {
+                    locInput.value = "住所が見つかりませんでした";
+                }
+            } else {
+                locInput.value = "エラー: " + status;
+            }
+        });
+    }, (error) => {
+        alert("位置情報の取得に失敗しました。");
+        locInput.value = "";
     });
 }
 

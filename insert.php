@@ -1,12 +1,5 @@
 <?php
 
-// 一時的にエラーを画面に出す
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
-
-
-
 // 1. POSTデータ取得（空チェック付き）
 $location      = isset($_POST['location']) ? $_POST['location'] : '';
 $lat           = isset($_POST['lat']) ? $_POST['lat'] : '';
